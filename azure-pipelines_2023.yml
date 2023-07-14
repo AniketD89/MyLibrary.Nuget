@@ -1,0 +1,49 @@
+trigger: 'none'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  version: 1.0.2-$(Build.BuildId)
+
+stages:
+- stage: Build_Stage
+  displayName: 
+  jobs:
+  - job: BuildNuget
+    displayName: Build Nuget packages
+    variables:
+      BuildConfiguration: release
+    steps:
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore Packages
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+
+    - task: DotNetCoreCLI@2
+      displayName: Build Apps
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(BuildConfiguration)'
+
+    - script: printenv
+
+    - task: DotNetCoreCLI@2
+      displayName: Pack Nuget Package
+      inputs:
+        command: 'pack'
+        packagesToPack: '**/*.csproj'
+        versioningScheme: 'byEnvVar'
+        versionEnvVar: 'version'
+
+    - task: DotNetCoreCLI@2
+      displayName: Push Nuget Package
+      inputs:
+        command: 'push'
+        packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+        nuGetFeedType: 'internal'
+        publishVstsFeed: '64b87180-dc24-422e-b336-f87731f2501d/f9269e3b-b2fd-4b75-9725-dd1c76395a25'
